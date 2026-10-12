@@ -44,7 +44,7 @@ Com `AIOPS_LLM_BACKEND=auto` (padrão) o agente tenta `cli`, depois `api`, depoi
 - [kind](https://kind.sigs.k8s.io/), [kubectl](https://kubernetes.io/docs/tasks/tools/), [Helm](https://helm.sh/)
 - `make` e `bash`
 - ~6 GB de RAM livres
-- Opcional: token da assinatura Claude **ou** chave da API (sem nenhum dos dois, funciona em modo `rules`)
+- Opcional: token da assinatura de alguma IA (codex, claude etc) **ou** chave da API (sem nenhum dos dois, funciona em modo `rules`)
 
 ## Início rápido
 

@@ -1,0 +1,47 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: iaops-demo-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: iaops
+spec:
+  groups:
+    - name: iaops.demo
+      rules:
+        - alert: DemoPodOOMKilled
+          # Janela de 15m: o backoff do CrashLoop chega a 5 min entre restarts, e com [5m]
+          # o alerta se resolvia sozinho entre uma tentativa e outra.
+          expr: |
+            increase(kube_pod_container_status_restarts_total{namespace="demo"}[15m]) > 0
+            and on (namespace, pod, container)
+            kube_pod_container_status_last_terminated_reason{namespace="demo", reason="OOMKilled"} == 1
+          for: 0m
+          labels:
+            severity: critical
+            scenario: oom
+          annotations:
+            summary: "Container {{ $labels.container }} do pod {{ $labels.pod }} foi encerrado por OOM"
+
+        - alert: DemoPodCrashLooping
+          expr: |
+            kube_pod_container_status_waiting_reason{namespace="demo", reason="CrashLoopBackOff"} == 1
+          for: 1m
+          labels:
+            severity: warning
+            scenario: crashloop
+          annotations:
+            summary: "Pod {{ $labels.pod }} em CrashLoopBackOff"
+
+        - alert: DemoCPUThrottlingHigh
+          expr: |
+            sum by (namespace, pod, container) (rate(container_cpu_cfs_throttled_periods_total{namespace="demo", container!=""}[2m]))
+            /
+            sum by (namespace, pod, container) (rate(container_cpu_cfs_periods_total{namespace="demo", container!=""}[2m]))
+            > 0.5
+          for: 1m
+          labels:
+            severity: warning
+            scenario: cpu
+          annotations:
+            summary: "Container {{ $labels.container }} do pod {{ $labels.pod }} com throttling de CPU acima de 50%"

@@ -1,0 +1,29 @@
+# Segredos
+.env
+*.key
+secrets.yaml
+
+# Dados locais do agente
+data/
+reports/
+*.db
+*.sqlite
+
+# Node
+node_modules/
+package-lock.json
+
+# Artefato do gerador de capturas
+docs/screenshots/_lista.txt
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# IDE / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

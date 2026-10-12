@@ -1,0 +1,14 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: iaops
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      # Grafana (NodePort 30300) -> http://localhost:3000
+      - containerPort: 30300
+        hostPort: 3000
+        protocol: TCP
+      # AIOps agent API (NodePort 30080) -> http://localhost:8080
+      - containerPort: 30080
+        hostPort: 8080
+        protocol: TCP

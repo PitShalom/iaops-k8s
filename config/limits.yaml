@@ -1,0 +1,14 @@
+models:
+  orchestrator: claude-sonnet-5-5
+  subagents: claude-haiku-5-5
+
+limits:
+  max_turns_subagent: 8
+  max_turns_incident: 20
+  max_tokens_incident: 30000
+  log_tail_lines: 100
+  dedupe_window_seconds: 300
+
+tool_policy:
+  cluster_mutation: false
+  allowed_write_paths: ["/reports"]

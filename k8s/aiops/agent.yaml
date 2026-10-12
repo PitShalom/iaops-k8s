@@ -1,0 +1,122 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aiops
+  labels:
+    app.kubernetes.io/part-of: iaops
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aiops-agent
+  namespace: aiops
+---
+# Somente leitura: o agente nunca altera o cluster.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aiops-agent-readonly
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "events", "namespaces", "services", "configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: aiops-agent-readonly
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: aiops-agent-readonly
+subjects:
+  - kind: ServiceAccount
+    name: aiops-agent
+    namespace: aiops
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: aiops-data
+  namespace: aiops
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aiops-agent
+  namespace: aiops
+  labels: { app: aiops-agent }
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate   # SQLite em PVC ReadWriteOnce
+  selector:
+    matchLabels: { app: aiops-agent }
+  template:
+    metadata:
+      labels: { app: aiops-agent }
+    spec:
+      serviceAccountName: aiops-agent
+      containers:
+        - name: agent
+          image: aiops-agent:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PROMETHEUS_URL
+              value: http://kps-prometheus.monitoring.svc.cluster.local:9090
+            - name: GRAFANA_URL
+              value: http://kps-grafana.monitoring.svc.cluster.local
+            - name: DATA_DIR
+              value: /data
+            - name: REPORTS_DIR
+              value: /data/reports
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-secrets
+                  key: ANTHROPIC_API_KEY
+                  optional: true   # sem chave, o agente usa o diagnóstico por regras
+            # Token da assinatura (gerado por `claude setup-token`), usado pela CLI headless
+            - name: CLAUDE_CODE_OAUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-secrets
+                  key: CLAUDE_CODE_OAUTH_TOKEN
+                  optional: true
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 384Mi }
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: aiops-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aiops-agent
+  namespace: aiops
+spec:
+  type: NodePort
+  selector: { app: aiops-agent }
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080

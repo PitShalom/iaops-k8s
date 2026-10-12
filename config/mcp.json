@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "kubernetes": {
+      "command": "npx",
+      "args": ["-y", "kubernetes-mcp-server@latest", "--read-only"],
+      "env": { "KUBECONFIG": "${KUBECONFIG}" }
+    },
+    "prometheus": {
+      "command": "uvx",
+      "args": ["prometheus-mcp-server"],
+      "env": { "PROMETHEUS_URL": "http://prometheus-operated.monitoring.svc:9090" }
+    }
+  }
+}

@@ -1,0 +1,88 @@
+# kube-prometheus-stack enxuto para Kind local.
+# Release: kps / namespace: monitoring
+
+fullnameOverride: kps
+
+# Componentes do control plane não são acessíveis no Kind
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+defaultRules:
+  create: true
+  rules:
+    etcd: false
+    kubeScheduler: false
+    kubeControllerManager: false
+    kubeProxy: false
+
+prometheus:
+  prometheusSpec:
+    # Seleciona PrometheusRules de qualquer release (as nossas em k8s/monitoring/rules.yaml)
+    ruleSelectorNilUsesHelmValues: false
+    serviceMonitorSelectorNilUsesHelmValues: false
+    retention: 6h
+    scrapeInterval: 15s
+    evaluationInterval: 15s
+    resources:
+      requests: { cpu: 100m, memory: 400Mi }
+      limits: { memory: 900Mi }
+    storageSpec: {}
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests: { cpu: 10m, memory: 32Mi }
+      limits: { memory: 128Mi }
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      receiver: aiops-agent
+      group_by: [alertname, namespace, pod]
+      # Valores curtos para a demo; em produção seriam bem maiores
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 30m
+      routes:
+        - receiver: "null"
+          matchers:
+            - alertname =~ "Watchdog|InfoInhibitor"
+    receivers:
+      - name: "null"
+      - name: aiops-agent
+        webhook_configs:
+          - url: http://aiops-agent.aiops.svc.cluster.local:8080/webhook
+            send_resolved: false
+
+grafana:
+  enabled: true
+  # Somente laboratório local. Não reutilize esta senha em outro ambiente.
+  adminPassword: iaops-lab
+  service:
+    type: NodePort
+    nodePort: 30300
+  persistence:
+    enabled: false
+  # Grafana 13 estourava 256Mi (OOMKilled em loop); 768Mi dá folga com os sidecars
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 768Mi }
+
+prometheusOperator:
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits: { memory: 192Mi }
+
+kube-state-metrics:
+  resources:
+    requests: { cpu: 10m, memory: 32Mi }
+    limits: { memory: 128Mi }
+
+nodeExporter:
+  enabled: true

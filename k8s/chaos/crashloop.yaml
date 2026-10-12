@@ -1,0 +1,28 @@
+# Cenário: CrashLoopBackOff — configuração obrigatória ausente derruba o processo no start.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-worker
+  namespace: demo
+  labels: { app: orders-worker, scenario: crashloop }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: orders-worker }
+  template:
+    metadata:
+      labels: { app: orders-worker, scenario: crashloop }
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sh", "-c"]
+          args:
+            - |
+              echo "INFO  starting orders-worker v1.4.2"
+              echo "ERROR required environment variable DATABASE_URL is not set"
+              echo "FATAL cannot start without database configuration, exiting"
+              exit 1
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits: { cpu: 50m, memory: 32Mi }

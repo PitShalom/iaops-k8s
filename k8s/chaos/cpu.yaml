@@ -1,0 +1,23 @@
+# Cenário: CPU throttling — carga acima do limit de CPU do container.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search-indexer
+  namespace: demo
+  labels: { app: search-indexer, scenario: cpu }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: search-indexer }
+  template:
+    metadata:
+      labels: { app: search-indexer, scenario: cpu }
+    spec:
+      containers:
+        - name: app
+          image: polinux/stress:1.0.4
+          command: ["stress"]
+          args: ["--cpu", "2"]
+          resources:
+            requests: { cpu: 100m, memory: 32Mi }
+            limits: { cpu: 200m, memory: 128Mi }

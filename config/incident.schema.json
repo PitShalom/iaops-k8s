@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IncidentDiagnosis",
+  "type": "object",
+  "required": ["resumo", "tipo", "severidade", "causa_provavel", "evidencias", "acao_sugerida", "confianca"],
+  "properties": {
+    "resumo": { "type": "string", "maxLength": 300 },
+    "tipo": { "enum": ["oom", "crashloop", "cpu", "latency", "imagepull", "outro"] },
+    "severidade": { "enum": ["baixa", "media", "alta", "critica"] },
+    "causa_provavel": { "type": "string" },
+    "evidencias": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["fonte", "detalhe"],
+        "properties": {
+          "fonte": { "type": "string" },
+          "detalhe": { "type": "string" }
+        }
+      }
+    },
+    "acao_sugerida": { "type": "string" },
+    "recorrencia": { "type": "integer", "minimum": 0 },
+    "confianca": { "type": "number", "minimum": 0, "maximum": 1 }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "iaops-diagram",
+  "private": true,
+  "type": "module",
+  "description": "Renderiza o diagrama animado de arquitetura (GIF + PNG) a partir de arquitetura.html",
+  "scripts": { "render": "node render.mjs ../../docs/img" },
+  "dependencies": { "gifenc": "1.0.3", "playwright-core": "1.49.1", "pngjs": "7.0.0" }
+}

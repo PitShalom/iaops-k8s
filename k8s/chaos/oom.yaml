@@ -1,0 +1,23 @@
+# Cenário: OOMKilled — o processo aloca mais memória que o limit do container.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments-api
+  namespace: demo
+  labels: { app: payments-api, scenario: oom }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: payments-api }
+  template:
+    metadata:
+      labels: { app: payments-api, scenario: oom }
+    spec:
+      containers:
+        - name: app
+          image: polinux/stress:1.0.4
+          command: ["stress"]
+          args: ["--vm", "1", "--vm-bytes", "200M", "--vm-hang", "0"]
+          resources:
+            requests: { cpu: 50m, memory: 32Mi }
+            limits: { cpu: 200m, memory: 64Mi }
